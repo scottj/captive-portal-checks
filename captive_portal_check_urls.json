@@ -5,23 +5,21 @@
       "os": "Windows",
       "urls": [
         "http://www.msftconnecttest.com/connecttest.txt",
-        "http://www.msftncsi.com/ncsi.txt",
         "https://www.msftconnecttest.com/connecttest.txt",
         "http://ipv6.msftconnecttest.com/connecttest.txt"
       ],
-      "expected_response": "Microsoft Connect Test"
+      "expected_response": "Microsoft Connect Test",
+      "expect_ssl_error": true
     },
     {
       "vendor": "Apple",
       "os": "macOS / iOS / iPadOS",
       "urls": [
         "http://captive.apple.com/hotspot-detect.html",
-        "http://www.apple.com/library/test/success.html",
-        "https://captive.apple.com/hotspot-detect.html",
-        "http://attwifi.apple.com/library/test/success.html",
-        "http://appleiphonecell.com/library/test/success.html"
+        "https://captive.apple.com/hotspot-detect.html"
       ],
-      "expected_response": "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>"
+      "expected_response": "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>",
+      "expect_ssl_error": true
     },
     {
       "vendor": "Google",
@@ -33,8 +31,7 @@
         "https://www.google.com/generate_204",
         "http://play.googleapis.com/generate_204",
         "http://clients1.google.com/generate_204",
-        "http://clients3.google.com/generate_204",
-        "http://connectivitycheck.gstatic.com/generate_204"
+        "http://clients3.google.com/generate_204"
       ],
       "expected_response": "HTTP 204 No Content"
     },
@@ -43,17 +40,23 @@
       "os": "Firefox Browser",
       "urls": [
         "http://detectportal.firefox.com/success.txt",
-        "https://detectportal.firefox.com/success.txt",
-        "http://detectportal.firefox.com/canonical.html"
+        "https://detectportal.firefox.com/success.txt"
       ],
       "expected_response": "success"
+    },
+    {
+      "vendor": "Mozilla",
+      "os": "Firefox Browser (modern)",
+      "urls": [
+        "http://detectportal.firefox.com/canonical.html"
+      ],
+      "expected_response": "meta http-equiv=\"refresh\""
     },
     {
       "vendor": "Ubuntu / Canonical",
       "os": "Ubuntu Linux",
       "urls": [
-        "http://connectivity-check.ubuntu.com/",
-        "http://connectivity-check.ubuntu.com"
+        "http://connectivity-check.ubuntu.com/"
       ],
       "expected_response": "HTTP 204 No Content"
     },
@@ -63,43 +66,39 @@
       "urls": [
         "http://networkcheck.kde.org/"
       ],
-      "expected_response": "KDE Network Check"
+      "expected_response": "OK"
     },
     {
       "vendor": "GNOME / NetworkManager",
       "os": "Linux (GNOME)",
       "urls": [
         "http://nmcheck.gnome.org/check_network_status.txt",
-        "http://fedoraproject.org/static/hotspot.txt",
         "http://network-test.debian.org/nm"
       ],
       "expected_response": "NetworkManager is online"
     },
     {
+      "vendor": "Fedora",
+      "os": "Fedora Linux",
+      "urls": [
+        "http://fedoraproject.org/static/hotspot.txt"
+      ],
+      "expected_response": "OK"
+    },
+    {
       "vendor": "Curl / Generic",
       "os": "Cross-platform",
       "urls": [
-        "http://neverssl.com/",
         "http://example.com/",
         "http://httpforever.com/"
       ],
       "expected_response": "HTTP 200 OK with page content"
     },
     {
-      "vendor": "Amazon",
-      "os": "Fire OS / Kindle",
-      "urls": [
-        "http://spectrum.s3.amazonaws.com/kindle-wifi/wifistub.html",
-        "http://kindle-wifi.amazon.com/wifistub.html"
-      ],
-      "expected_response": "Kindle WiFi stub page"
-    },
-    {
       "vendor": "Huawei",
       "os": "HarmonyOS / EMUI",
       "urls": [
-        "http://connectivitycheck.platform.hicloud.com/generate_204",
-        "http://connectivitycheck.hicloud.com/generate_204"
+        "http://connectivitycheck.platform.hicloud.com/generate_204"
       ],
       "expected_response": "HTTP 204 No Content"
     },
@@ -112,20 +111,27 @@
       "expected_response": "HTTP 204 No Content"
     },
     {
-      "vendor": "Samsung",
-      "os": "Samsung Android",
-      "urls": [
-        "http://connectivitycheck.androidwebview.samsung.com/generate_204",
-        "http://www.samsung.com/index.html"
-      ],
-      "expected_response": "HTTP 204 No Content or HTTP 200 OK"
-    },
-    {
       "vendor": "Cloudflare",
       "os": "Cross-platform / WARP",
       "urls": [
         "http://cp.cloudflare.com/",
         "https://cp.cloudflare.com/"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "Microsoft Edge",
+      "os": "Edge Browser",
+      "urls": [
+        "http://edge-http.microsoft.com/captiveportal/generate_204"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "Brave",
+      "os": "Brave Browser",
+      "urls": [
+        "http://detectportal.brave-http-only.com/generate_204"
       ],
       "expected_response": "HTTP 204 No Content"
     }

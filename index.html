@@ -215,22 +215,21 @@
 
     /* ── Cards ── */
     .card-list {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 1px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      overflow: hidden;
-      background: var(--border);
+      columns: 2;
+      column-gap: 0.75rem;
     }
 
     @media (max-width: 800px) {
-      .card-list { grid-template-columns: 1fr; }
+      .card-list { columns: 1; }
     }
 
     .card {
+      break-inside: avoid;
       background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
       padding: 1.25rem 1.5rem;
+      margin-bottom: 0.75rem;
       transition: background 0.15s;
       animation: fadeIn 0.25s ease both;
     }
@@ -313,6 +312,21 @@
 
     .proto.http  { background: var(--http-bg); color: var(--http-color); }
     .proto.https { background: var(--https-bg); color: var(--https-color); }
+
+    .ssl-expect {
+      font-family: var(--mono);
+      font-size: 0.55rem;
+      color: var(--text-dim);
+      flex-shrink: 0;
+      title: 'SSL error expected by design';
+    }
+
+    .ssl-expect svg {
+      width: 12px;
+      height: 12px;
+      vertical-align: -2px;
+      opacity: 0.5;
+    }
 
     .url-text {
       font-family: var(--mono);
@@ -438,23 +452,21 @@ const DATA = {
       "os": "Windows",
       "urls": [
         "http://www.msftconnecttest.com/connecttest.txt",
-        "http://www.msftncsi.com/ncsi.txt",
         "https://www.msftconnecttest.com/connecttest.txt",
         "http://ipv6.msftconnecttest.com/connecttest.txt"
       ],
-      "expected_response": "Microsoft Connect Test"
+      "expected_response": "Microsoft Connect Test",
+      "expect_ssl_error": true
     },
     {
       "vendor": "Apple",
       "os": "macOS / iOS / iPadOS",
       "urls": [
         "http://captive.apple.com/hotspot-detect.html",
-        "http://www.apple.com/library/test/success.html",
-        "https://captive.apple.com/hotspot-detect.html",
-        "http://attwifi.apple.com/library/test/success.html",
-        "http://appleiphonecell.com/library/test/success.html"
+        "https://captive.apple.com/hotspot-detect.html"
       ],
-      "expected_response": "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>"
+      "expected_response": "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>",
+      "expect_ssl_error": true
     },
     {
       "vendor": "Google",
@@ -475,17 +487,23 @@ const DATA = {
       "os": "Firefox Browser",
       "urls": [
         "http://detectportal.firefox.com/success.txt",
-        "https://detectportal.firefox.com/success.txt",
-        "http://detectportal.firefox.com/canonical.html"
+        "https://detectportal.firefox.com/success.txt"
       ],
       "expected_response": "success"
+    },
+    {
+      "vendor": "Mozilla",
+      "os": "Firefox Browser (modern)",
+      "urls": [
+        "http://detectportal.firefox.com/canonical.html"
+      ],
+      "expected_response": "meta http-equiv=\"refresh\""
     },
     {
       "vendor": "Ubuntu / Canonical",
       "os": "Ubuntu Linux",
       "urls": [
-        "http://connectivity-check.ubuntu.com/",
-        "http://connectivity-check.ubuntu.com"
+        "http://connectivity-check.ubuntu.com/"
       ],
       "expected_response": "HTTP 204 No Content"
     },
@@ -495,43 +513,39 @@ const DATA = {
       "urls": [
         "http://networkcheck.kde.org/"
       ],
-      "expected_response": "KDE Network Check"
+      "expected_response": "OK"
     },
     {
       "vendor": "GNOME / NetworkManager",
       "os": "Linux (GNOME)",
       "urls": [
         "http://nmcheck.gnome.org/check_network_status.txt",
-        "http://fedoraproject.org/static/hotspot.txt",
         "http://network-test.debian.org/nm"
       ],
       "expected_response": "NetworkManager is online"
     },
     {
+      "vendor": "Fedora",
+      "os": "Fedora Linux",
+      "urls": [
+        "http://fedoraproject.org/static/hotspot.txt"
+      ],
+      "expected_response": "OK"
+    },
+    {
       "vendor": "Curl / Generic",
       "os": "Cross-platform",
       "urls": [
-        "http://neverssl.com/",
         "http://example.com/",
         "http://httpforever.com/"
       ],
       "expected_response": "HTTP 200 OK with page content"
     },
     {
-      "vendor": "Amazon",
-      "os": "Fire OS / Kindle",
-      "urls": [
-        "http://spectrum.s3.amazonaws.com/kindle-wifi/wifistub.html",
-        "http://kindle-wifi.amazon.com/wifistub.html"
-      ],
-      "expected_response": "Kindle WiFi stub page"
-    },
-    {
       "vendor": "Huawei",
       "os": "HarmonyOS / EMUI",
       "urls": [
-        "http://connectivitycheck.platform.hicloud.com/generate_204",
-        "http://connectivitycheck.hicloud.com/generate_204"
+        "http://connectivitycheck.platform.hicloud.com/generate_204"
       ],
       "expected_response": "HTTP 204 No Content"
     },
@@ -544,20 +558,27 @@ const DATA = {
       "expected_response": "HTTP 204 No Content"
     },
     {
-      "vendor": "Samsung",
-      "os": "Samsung Android",
-      "urls": [
-        "http://connectivitycheck.androidwebview.samsung.com/generate_204",
-        "http://www.samsung.com/index.html"
-      ],
-      "expected_response": "HTTP 200 OK or HTTP 204 No Content"
-    },
-    {
       "vendor": "Cloudflare",
       "os": "Cross-platform / WARP",
       "urls": [
         "http://cp.cloudflare.com/",
         "https://cp.cloudflare.com/"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "Microsoft Edge",
+      "os": "Edge Browser",
+      "urls": [
+        "http://edge-http.microsoft.com/captiveportal/generate_204"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "Brave",
+      "os": "Brave Browser",
+      "urls": [
+        "http://detectportal.brave-http-only.com/generate_204"
       ],
       "expected_response": "HTTP 204 No Content"
     }
@@ -654,7 +675,15 @@ function makeCard(entry, delay) {
     hint.className = 'copy-hint';
     hint.textContent = 'copy';
 
-    li.append(proto, text, hint);
+    if (entry.expect_ssl_error && isHttps) {
+      const ssl = document.createElement('span');
+      ssl.className = 'ssl-expect';
+      ssl.title = 'SSL error expected — used for captive portal detection';
+      ssl.innerHTML = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="7" width="10" height="7" rx="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2"/><line x1="2" y1="14" x2="14" y2="2"/></svg>';
+      li.append(proto, text, ssl, hint);
+    } else {
+      li.append(proto, text, hint);
+    }
     li.addEventListener('click', () => {
       navigator.clipboard.writeText(url).then(() => {
         li.classList.add('copied');
