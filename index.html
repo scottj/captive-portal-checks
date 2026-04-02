@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Captive Portal Check URLs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0c10;
+      --surface: #111318;
+      --surface2: #181c24;
+      --border: #1f2530;
+      --border-hi: #2d3545;
+      --accent: #00d4ff;
+      --accent2: #00ff9d;
+      --accent3: #ff6b35;
+      --text: #c8d4e8;
+      --text-dim: #5a6a82;
+      --text-bright: #e8f0ff;
+      --mono: 'IBM Plex Mono', monospace;
+      --sans: 'IBM Plex Sans', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-weight: 300;
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Scanline overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.04) 2px,
+        rgba(0,0,0,0.04) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 2.5rem 2rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      width: 42px;
+      height: 42px;
+      border: 1.5px solid var(--accent);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 1.1rem;
+      font-weight: 600;
+      box-shadow: 0 0 12px rgba(0,212,255,0.2);
+      flex-shrink: 0;
+    }
+
+    h1 {
+      font-family: var(--mono);
+      font-size: clamp(1.1rem, 3vw, 1.55rem);
+      font-weight: 600;
+      color: var(--text-bright);
+      letter-spacing: -0.02em;
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    .subtitle {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      font-family: var(--mono);
+      margin-top: 0.2rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 1.5rem;
+      align-items: center;
+    }
+
+    .stat {
+      text-align: right;
+    }
+
+    .stat-value {
+      font-family: var(--mono);
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--accent2);
+      line-height: 1;
+    }
+
+    .stat-label {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── Controls ── */
+    .controls {
+      max-width: 1100px;
+      margin: 1.5rem auto;
+      padding: 0 2rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 0.85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      pointer-events: none;
+    }
+
+    input[type="search"] {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-bright);
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      padding: 0.6rem 1rem 0.6rem 2.4rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="search"]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px rgba(0,212,255,0.1);
+    }
+
+    input[type="search"]::placeholder { color: var(--text-dim); }
+
+    .filter-chips {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      padding: 0.35rem 0.75rem;
+      transition: all 0.15s;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .chip:hover { border-color: var(--border-hi); color: var(--text); }
+
+    .chip.active {
+      background: rgba(0,212,255,0.08);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Main grid ── */
+    main {
+      max-width: 1100px;
+      margin: 0 auto 4rem;
+      padding: 0 2rem;
+    }
+
+    #results-info {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      min-height: 1.2em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      padding: 1.4rem;
+      transition: background 0.2s;
+      animation: fadeIn 0.3s ease both;
+    }
+
+    .card:hover { background: var(--surface2); }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.85rem;
+    }
+
+    .vendor-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .card-title-group { flex: 1; min-width: 0; }
+
+    .card-vendor {
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-bright);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card-os {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .url-count {
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 3px;
+      padding: 0.15rem 0.45rem;
+      flex-shrink: 0;
+    }
+
+    /* URL list */
+    .url-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.35rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .url-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.38rem 0.6rem;
+      transition: border-color 0.15s;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .url-item:hover { border-color: var(--border-hi); }
+
+    .url-item.copied { border-color: var(--accent2); }
+
+    .proto {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      padding: 0.1rem 0.35rem;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .proto.http  { background: rgba(255,107,53,0.12); color: var(--accent3); }
+    .proto.https { background: rgba(0,255,157,0.10); color: var(--accent2); }
+
+    .url-text {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .copy-hint {
+      font-family: var(--mono);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+
+    .url-item:hover .copy-hint { opacity: 1; }
+    .url-item.copied .copy-hint { opacity: 1; color: var(--accent2); }
+
+    /* Expected response */
+    .expected {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      padding: 0.5rem 0.65rem;
+      background: rgba(0,212,255,0.04);
+      border-left: 2px solid rgba(0,212,255,0.25);
+      border-radius: 0 4px 4px 0;
+    }
+
+    .expected-label {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      flex-shrink: 0;
+      padding-top: 0.05rem;
+    }
+
+    .expected-value {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    /* No results */
+    #no-results {
+      display: none;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      grid-column: 1 / -1;
+    }
+
+    /* Footer */
+    footer {
+      border-top: 1px solid var(--border);
+      text-align: center;
+      padding: 1.5rem 2rem;
+      font-family: var(--mono);
+      font-size: 0.68rem;
+      color: var(--text-dim);
+    }
+
+    footer span { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-left">
+      <div class="logo-icon">CP</div>
+      <div>
+        <h1>Captive<span>Portal</span>.db</h1>
+        <div class="subtitle">// connectivity check endpoint reference</div>
+      </div>
+    </div>
+    <div class="stats-bar">
+      <div class="stat">
+        <div class="stat-value" id="stat-vendors">—</div>
+        <div class="stat-label">Vendors</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value" id="stat-urls">—</div>
+        <div class="stat-label">URLs</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="controls">
+  <div class="search-wrap">
+    <span class="search-icon">⌕</span>
+    <input type="search" id="search" placeholder="Search vendor, OS, or URL…" autocomplete="off" />
+  </div>
+  <div class="filter-chips" id="chips"></div>
+</div>
+
+<main>
+  <div id="results-info"></div>
+  <div class="grid" id="grid">
+    <div id="no-results">No matching entries found.</div>
+  </div>
+</main>
+
+<footer>
+  <span>// captive_portal_check_urls.json</span> &nbsp;·&nbsp; click any URL to copy &nbsp;·&nbsp; <span>HTTP</span> unencrypted &nbsp;·&nbsp; <span>HTTPS</span> encrypted
+</footer>
+
+<script>
+const DATA = {
+  "captive_portal_check_urls": [
+    {
+      "vendor": "Microsoft",
+      "os": "Windows",
+      "urls": [
+        "http://www.msftconnecttest.com/connecttest.txt",
+        "http://www.msftncsi.com/ncsi.txt",
+        "https://www.msftconnecttest.com/connecttest.txt",
+        "http://ipv6.msftconnecttest.com/connecttest.txt"
+      ],
+      "expected_response": "Microsoft Connect Test"
+    },
+    {
+      "vendor": "Apple",
+      "os": "macOS / iOS / iPadOS",
+      "urls": [
+        "http://captive.apple.com/hotspot-detect.html",
+        "http://www.apple.com/library/test/success.html",
+        "https://captive.apple.com/hotspot-detect.html",
+        "http://attwifi.apple.com/library/test/success.html",
+        "http://appleiphonecell.com/library/test/success.html"
+      ],
+      "expected_response": "<HTML><HEAD><TITLE>Success</TITLE></HEAD><BODY>Success</BODY></HTML>"
+    },
+    {
+      "vendor": "Google",
+      "os": "Android / ChromeOS",
+      "urls": [
+        "http://connectivitycheck.gstatic.com/generate_204",
+        "http://connectivitycheck.android.com/generate_204",
+        "http://www.gstatic.com/generate_204",
+        "https://www.google.com/generate_204",
+        "http://play.googleapis.com/generate_204",
+        "http://clients1.google.com/generate_204",
+        "http://clients3.google.com/generate_204"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "Mozilla",
+      "os": "Firefox Browser",
+      "urls": [
+        "http://detectportal.firefox.com/success.txt",
+        "https://detectportal.firefox.com/success.txt",
+        "http://detectportal.firefox.com/canonical.html"
+      ],
+      "expected_response": "success"
+    },
+    {
+      "vendor": "Ubuntu / Canonical",
+      "os": "Ubuntu Linux",
+      "urls": [
+        "http://connectivity-check.ubuntu.com/",
+        "http://connectivity-check.ubuntu.com"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "KDE",
+      "os": "Linux (KDE Plasma)",
+      "urls": [
+        "http://networkcheck.kde.org/"
+      ],
+      "expected_response": "KDE Network Check"
+    },
+    {
+      "vendor": "GNOME / NetworkManager",
+      "os": "Linux (GNOME)",
+      "urls": [
+        "http://nmcheck.gnome.org/check_network_status.txt",
+        "http://fedoraproject.org/static/hotspot.txt",
+        "http://network-test.debian.org/nm"
+      ],
+      "expected_response": "NetworkManager is online"
+    },
+    {
+      "vendor": "Curl / Generic",
+      "os": "Cross-platform",
+      "urls": [
+        "http://neverssl.com/",
+        "http://example.com/",
+        "http://httpforever.com/"
+      ],
+      "expected_response": "HTTP 200 OK with page content"
+    },
+    {
+      "vendor": "Amazon",
+      "os": "Fire OS / Kindle",
+      "urls": [
+        "http://spectrum.s3.amazonaws.com/kindle-wifi/wifistub.html",
+        "http://kindle-wifi.amazon.com/wifistub.html"
+      ],
+      "expected_response": "Kindle WiFi stub page"
+    },
+    {
+      "vendor": "Huawei",
+      "os": "HarmonyOS / EMUI",
+      "urls": [
+        "http://connectivitycheck.platform.hicloud.com/generate_204",
+        "http://connectivitycheck.hicloud.com/generate_204"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "Xiaomi / MIUI",
+      "os": "MIUI Android",
+      "urls": [
+        "http://connect.rom.miui.com/generate_204"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    },
+    {
+      "vendor": "Samsung",
+      "os": "Samsung Android",
+      "urls": [
+        "http://connectivitycheck.androidwebview.samsung.com/generate_204",
+        "http://www.samsung.com/index.html"
+      ],
+      "expected_response": "HTTP 200 OK or HTTP 204 No Content"
+    },
+    {
+      "vendor": "Cloudflare",
+      "os": "Cross-platform / WARP",
+      "urls": [
+        "http://cp.cloudflare.com/",
+        "https://cp.cloudflare.com/"
+      ],
+      "expected_response": "HTTP 204 No Content"
+    }
+  ]
+};
+
+// Emoji icons per vendor
+const ICONS = {
+  "Microsoft":           { emoji: "🪟", bg: "rgba(0,120,215,0.15)" },
+  "Apple":               { emoji: "🍎", bg: "rgba(255,255,255,0.07)" },
+  "Google":              { emoji: "🔍", bg: "rgba(66,133,244,0.15)" },
+  "Mozilla":             { emoji: "🦊", bg: "rgba(255,100,0,0.15)" },
+  "Ubuntu / Canonical":  { emoji: "🐧", bg: "rgba(233,84,32,0.15)" },
+  "KDE":                 { emoji: "🖥️", bg: "rgba(54,116,185,0.15)" },
+  "GNOME / NetworkManager": { emoji: "🐾", bg: "rgba(75,175,75,0.12)" },
+  "Curl / Generic":      { emoji: "🌐", bg: "rgba(100,100,100,0.18)" },
+  "Amazon":              { emoji: "📦", bg: "rgba(255,153,0,0.15)" },
+  "Huawei":              { emoji: "📱", bg: "rgba(207,0,15,0.12)" },
+  "Xiaomi / MIUI":       { emoji: "📲", bg: "rgba(255,107,53,0.12)" },
+  "Samsung":             { emoji: "💠", bg: "rgba(20,40,160,0.15)" },
+  "Cloudflare":          { emoji: "☁️", bg: "rgba(249,128,18,0.13)" },
+};
+
+const entries = DATA.captive_portal_check_urls;
+
+// Stats
+const totalUrls = entries.reduce((s, e) => s + e.urls.length, 0);
+document.getElementById('stat-vendors').textContent = entries.length;
+document.getElementById('stat-urls').textContent = totalUrls;
+
+// Build filter chips
+const osGroups = [...new Set(entries.map(e => {
+  if (e.os.includes('Windows')) return 'Windows';
+  if (e.os.includes('iOS') || e.os.includes('macOS')) return 'Apple';
+  if (e.os.includes('Android') || e.os.includes('ChromeOS')) return 'Android';
+  if (e.os.includes('Linux') || e.os.includes('GNOME') || e.os.includes('KDE') || e.os.includes('Ubuntu')) return 'Linux';
+  if (e.os.includes('Cross')) return 'Cross-platform';
+  return 'Other';
+}))];
+
+let activeFilter = null;
+
+const chipsEl = document.getElementById('chips');
+osGroups.forEach(group => {
+  const chip = document.createElement('button');
+  chip.className = 'chip';
+  chip.textContent = group;
+  chip.addEventListener('click', () => {
+    if (activeFilter === group) {
+      activeFilter = null;
+      chip.classList.remove('active');
+    } else {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      activeFilter = group;
+      chip.classList.add('active');
+    }
+    render();
+  });
+  chipsEl.appendChild(chip);
+});
+
+function osToGroup(os) {
+  if (os.includes('Windows')) return 'Windows';
+  if (os.includes('iOS') || os.includes('macOS')) return 'Apple';
+  if (os.includes('Android') || os.includes('ChromeOS')) return 'Android';
+  if (os.includes('Linux') || os.includes('GNOME') || os.includes('KDE') || os.includes('Ubuntu')) return 'Linux';
+  if (os.includes('Cross')) return 'Cross-platform';
+  return 'Other';
+}
+
+function makeCard(entry, delay) {
+  const icon = ICONS[entry.vendor] || { emoji: '🔗', bg: 'rgba(100,100,100,0.15)' };
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.style.animationDelay = `${delay * 40}ms`;
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'card-header';
+
+  const iconEl = document.createElement('div');
+  iconEl.className = 'vendor-icon';
+  iconEl.style.background = icon.bg;
+  iconEl.textContent = icon.emoji;
+
+  const titleGroup = document.createElement('div');
+  titleGroup.className = 'card-title-group';
+  titleGroup.innerHTML = `<div class="card-vendor">${entry.vendor}</div><div class="card-os">${entry.os}</div>`;
+
+  const countEl = document.createElement('div');
+  countEl.className = 'url-count';
+  countEl.textContent = `${entry.urls.length} URL${entry.urls.length !== 1 ? 's' : ''}`;
+
+  header.append(iconEl, titleGroup, countEl);
+
+  // URL list
+  const list = document.createElement('ul');
+  list.className = 'url-list';
+
+  entry.urls.forEach(url => {
+    const li = document.createElement('li');
+    li.className = 'url-item';
+    li.title = 'Click to copy';
+
+    const isHttps = url.startsWith('https');
+    const proto = document.createElement('span');
+    proto.className = `proto ${isHttps ? 'https' : 'http'}`;
+    proto.textContent = isHttps ? 'HTTPS' : 'HTTP';
+
+    const text = document.createElement('span');
+    text.className = 'url-text';
+    text.textContent = url.replace(/^https?:\/\//, '');
+
+    const hint = document.createElement('span');
+    hint.className = 'copy-hint';
+    hint.textContent = 'copy';
+
+    li.append(proto, text, hint);
+    li.addEventListener('click', () => {
+      navigator.clipboard.writeText(url).then(() => {
+        li.classList.add('copied');
+        hint.textContent = '✓';
+        setTimeout(() => {
+          li.classList.remove('copied');
+          hint.textContent = 'copy';
+        }, 1500);
+      });
+    });
+
+    list.appendChild(li);
+  });
+
+  // Expected response
+  const exp = document.createElement('div');
+  exp.className = 'expected';
+  exp.innerHTML = `<span class="expected-label">expect&nbsp;</span><span class="expected-value">${escapeHtml(entry.expected_response)}</span>`;
+
+  card.append(header, list, exp);
+  return card;
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function render() {
+  const query = document.getElementById('search').value.toLowerCase().trim();
+  const grid = document.getElementById('grid');
+  const noRes = document.getElementById('no-results');
+
+  // Clear cards (keep no-results sentinel)
+  [...grid.querySelectorAll('.card')].forEach(c => c.remove());
+
+  const filtered = entries.filter(e => {
+    const groupMatch = !activeFilter || osToGroup(e.os) === activeFilter;
+    const queryMatch = !query ||
+      e.vendor.toLowerCase().includes(query) ||
+      e.os.toLowerCase().includes(query) ||
+      e.urls.some(u => u.toLowerCase().includes(query)) ||
+      e.expected_response.toLowerCase().includes(query);
+    return groupMatch && queryMatch;
+  });
+
+  const urlCount = filtered.reduce((s, e) => s + e.urls.length, 0);
+  const info = document.getElementById('results-info');
+  if (query || activeFilter) {
+    info.textContent = `// showing ${filtered.length} vendor${filtered.length !== 1 ? 's' : ''}, ${urlCount} URLs`;
+  } else {
+    info.textContent = '';
+  }
+
+  if (filtered.length === 0) {
+    noRes.style.display = 'block';
+  } else {
+    noRes.style.display = 'none';
+    filtered.forEach((entry, i) => {
+      grid.appendChild(makeCard(entry, i));
+    });
+  }
+}
+
+document.getElementById('search').addEventListener('input', render);
+
+render();
+</script>
+</body>
+</html>
