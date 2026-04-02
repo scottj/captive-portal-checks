@@ -26,6 +26,26 @@
       --sans: 'IBM Plex Sans', sans-serif;
     }
 
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f6f9;
+        --surface: #ffffff;
+        --surface2: #eaecf1;
+        --border: #d0d5dd;
+        --border-hi: #b8bfcc;
+        --accent: #0094b3;
+        --accent2: #00875a;
+        --accent3: #d4520a;
+        --text: #2a3040;
+        --text-dim: #6b7a90;
+        --text-bright: #111826;
+      }
+
+      body::before {
+        display: none;
+      }
+    }
+
     html { scroll-behavior: smooth; }
 
     body {
